@@ -66,3 +66,23 @@ embeddings = np.array(embeddings).astype('float32')  # FAISS requires float32
 index = build_faiss_index(embeddings)
 
 print("Number of vectors in index:", index.ntotal)
+
+def retrieve_faiss(query, index, chunks, top_k=2):
+    query_embedding = embed_model.encode([query]).astype('float32')
+    faiss.normalize_L2(query_embedding)  # must normalize query the same way as chunks
+    
+    scores, indices = index.search(query_embedding, top_k)
+    
+    top_chunks = [chunks[i] for i in indices[0]]
+    top_scores = scores[0]
+    
+    return top_chunks, top_scores
+
+# test it
+query = "What happened to Service 49?"
+top_chunks, top_scores = retrieve_faiss(query, index, chunks)
+
+for i, (chunk, score) in enumerate(zip(top_chunks, top_scores)):
+    print(f"--- Match {i+1} (score: {score:.3f}) ---")
+    print(chunk)
+    print()
